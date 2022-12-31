@@ -2,11 +2,16 @@
 
 #include "../util/util_time.h"
 #include "dxvk_device.h"
+#include "../util/util_win32_compat.h"
 
 namespace dxvk {
 
   DxvkLfx2::DxvkLfx2() {
+#ifdef _WIN32
     const auto lfxModuleName = "latencyflex2_rust.dll";
+#else
+    const auto lfxModuleName = "liblatencyflex2_rust.so";
+#endif
 
     m_lfxModule = ::LoadLibraryA(lfxModuleName);
     if (m_lfxModule == nullptr) {
@@ -38,9 +43,9 @@ namespace dxvk {
     m_lfxModule = nullptr;
   }
 
-  template <typename T>
-  T DxvkLfx2::GetProcAddress(const char* name) {
-    return reinterpret_cast<T>(reinterpret_cast<void*>(::GetProcAddress(m_lfxModule, name)));
+  template<typename T>
+  T DxvkLfx2::GetProcAddress(const char *name) {
+    return reinterpret_cast<T>(reinterpret_cast<void *>(::GetProcAddress(m_lfxModule, name)));
   }
 
   DxvkLfx2Tracker::DxvkLfx2Tracker(DxvkDevice *device) : m_device(device) {
@@ -79,7 +84,8 @@ namespace dxvk {
                                                            (double) m_device->adapter()->deviceProperties().limits.timestampPeriod);
 
           m_device->lfx2().MarkSection(static_cast<const lfx2Frame *>(m_frame_handle[i]),
-                          1000, i == 0 ? lfx2MarkType::lfx2MarkTypeBegin : lfx2MarkType::lfx2MarkTypeEnd, timestamp);
+                                       1000, i == 0 ? lfx2MarkType::lfx2MarkTypeBegin : lfx2MarkType::lfx2MarkTypeEnd,
+                                       timestamp);
           m_device->lfx2().FrameRelease(static_cast<const lfx2Frame *>(m_frame_handle[i]));
         }
       }
