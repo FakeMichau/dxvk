@@ -1,6 +1,7 @@
 #pragma once
 
 #include <limits>
+#include <utility>
 
 #include "dxvk_bind_mask.h"
 #include "dxvk_buffer.h"
@@ -17,6 +18,7 @@
 #include "dxvk_sparse.h"
 #include "dxvk_staging.h"
 #include "dxvk_stats.h"
+#include "dxvk_lfx2.h"
 
 namespace dxvk {
   
@@ -319,12 +321,17 @@ namespace dxvk {
       m_signalTracker.add(signal, value);
     }
 
+    void trackLatencyMarker(void *lfx2Frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
+      m_lfx2Tracker.add(lfx2Frame, std::move(timestampQuery), end);
+    }
+
     /**
      * \brief Notifies resources and signals
      */
     void notifyObjects() {
       m_resources.notify();
       m_signalTracker.notify();
+      m_lfx2Tracker.notify();
     }
 
     /**
@@ -1050,6 +1057,7 @@ namespace dxvk {
     DxvkGpuQueryTracker       m_gpuQueryTracker;
     DxvkBufferTracker         m_bufferTracker;
     DxvkStatCounters          m_statCounters;
+    DxvkLfx2Tracker           m_lfx2Tracker;
 
     DxvkCommandSubmission     m_commandSubmission;
 

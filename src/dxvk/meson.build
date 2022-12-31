@@ -82,6 +82,7 @@ dxvk_src = [
   'dxvk_image.cpp',
   'dxvk_instance.cpp',
   'dxvk_lifetime.cpp',
+  'dxvk_lfx2.cpp',
   'dxvk_memory.cpp',
   'dxvk_meta_blit.cpp',
   'dxvk_meta_clear.cpp',

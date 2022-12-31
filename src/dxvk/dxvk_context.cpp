@@ -6444,4 +6444,8 @@ namespace dxvk {
     this->beginCurrentCommands();
   }
 
+  void DxvkContext::trackLatencyMarker(void *frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
+    m_cmd->trackLatencyMarker(frame, std::move(timestampQuery), end);
+  }
+
 }

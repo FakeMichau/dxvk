@@ -11,6 +11,7 @@
 namespace dxvk {
 
   class DxvkCommandList;
+  class DxvkDevice;
 
   class DxvkGpuQueryPool;
   class DxvkGpuQueryAllocator;

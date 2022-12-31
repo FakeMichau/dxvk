@@ -7,97 +7,102 @@
 #include <vulkan/vulkan.h>
 
 #define VULKAN_FN(name) \
-  ::PFN_ ## name name = reinterpret_cast<::PFN_ ## name>(sym(#name))
+  ::PFN_##name name = reinterpret_cast<::PFN_##name>(sym(#name))
 
-using PFN_wine_vkAcquireKeyedMutex = VkResult (VKAPI_PTR *)(VkDevice device, VkDeviceMemory memory, uint64_t key, uint32_t timeout_ms);
-using PFN_wine_vkReleaseKeyedMutex = VkResult (VKAPI_PTR *)(VkDevice device, VkDeviceMemory memory, uint64_t key);
+using PFN_wine_vkAcquireKeyedMutex = VkResult(VKAPI_PTR *)(VkDevice device, VkDeviceMemory memory, uint64_t key, uint32_t timeout_ms);
+using PFN_wine_vkReleaseKeyedMutex = VkResult(VKAPI_PTR *)(VkDevice device, VkDeviceMemory memory, uint64_t key);
 
-namespace dxvk::vk {
+namespace dxvk::vk
+{
 
   /**
    * \brief Vulkan library loader
-   * 
+   *
    * Dynamically loads the vulkan-1 library and
    * provides methods to load Vulkan functions that
    * can be called before creating a instance.
    */
-  struct LibraryLoader : public RcObject {
+  struct LibraryLoader : public RcObject
+  {
     LibraryLoader();
     LibraryLoader(PFN_vkGetInstanceProcAddr loaderProc);
     ~LibraryLoader();
-    PFN_vkVoidFunction sym(VkInstance instance, const char* name) const;
-    PFN_vkVoidFunction sym(const char* name) const;
+    PFN_vkVoidFunction sym(VkInstance instance, const char *name) const;
+    PFN_vkVoidFunction sym(const char *name) const;
     PFN_vkGetInstanceProcAddr getLoaderProc() const { return m_getInstanceProcAddr; }
-    bool               valid() const;
+    bool valid() const;
+
   protected:
-    HMODULE                   m_library             = nullptr;
+    HMODULE m_library = nullptr;
     PFN_vkGetInstanceProcAddr m_getInstanceProcAddr = nullptr;
   };
-  
-  
+
   /**
    * \brief Vulkan instance loader
-   * 
+   *
    * Loads Vulkan functions that can be
    * called for a specific instance.
    */
-  struct InstanceLoader : public RcObject {
-    InstanceLoader(const Rc<LibraryLoader>& library, bool owned, VkInstance instance);
-    PFN_vkVoidFunction sym(const char* name) const;
+  struct InstanceLoader : public RcObject
+  {
+    InstanceLoader(const Rc<LibraryLoader> &library, bool owned, VkInstance instance);
+    PFN_vkVoidFunction sym(const char *name) const;
     PFN_vkGetInstanceProcAddr getLoaderProc() const { return m_library->getLoaderProc(); }
     VkInstance instance() const { return m_instance; }
+
   protected:
     Rc<LibraryLoader> m_library;
-    const VkInstance  m_instance;
-    const bool        m_owned;
+    const VkInstance m_instance;
+    const bool m_owned;
   };
-  
-  
+
   /**
    * \brief Vulkan device loader
-   * 
+   *
    * Loads Vulkan functions for a
    * specific device.
    */
-  struct DeviceLoader : public RcObject {
-    DeviceLoader(const Rc<InstanceLoader>& library, bool owned, VkDevice device);
-    PFN_vkVoidFunction sym(const char* name) const;
+  struct DeviceLoader : public RcObject
+  {
+    DeviceLoader(const Rc<InstanceLoader> &library, bool owned, VkDevice device);
+    PFN_vkVoidFunction sym(const char *name) const;
     VkDevice device() const { return m_device; }
+
   protected:
-    Rc<InstanceLoader>            m_library;
+    Rc<InstanceLoader> m_library;
     const PFN_vkGetDeviceProcAddr m_getDeviceProcAddr;
-    const VkDevice                m_device;
-    const bool                    m_owned;
+    const VkDevice m_device;
+    const bool m_owned;
   };
-  
-  
+
   /**
    * \brief Vulkan library functions
-   * 
+   *
    * Vulkan functions that are called before
    * creating an actual Vulkan instance.
    */
-  struct LibraryFn : LibraryLoader {
+  struct LibraryFn : LibraryLoader
+  {
     LibraryFn();
     LibraryFn(PFN_vkGetInstanceProcAddr loaderProc);
     ~LibraryFn();
-    
+
     VULKAN_FN(vkCreateInstance);
     VULKAN_FN(vkEnumerateInstanceLayerProperties);
     VULKAN_FN(vkEnumerateInstanceExtensionProperties);
   };
-  
-  
+
   /**
    * \brief Vulkan instance functions
-   * 
+   *
    * Vulkan functions for a given instance that
    * are independent of any Vulkan devices.
    */
-  struct InstanceFn : InstanceLoader {
-    InstanceFn(const Rc<LibraryLoader>& library, bool owned, VkInstance instance);
+  struct InstanceFn : InstanceLoader
+  {
+    InstanceFn(const Rc<LibraryLoader> &library, bool owned, VkInstance instance);
     ~InstanceFn();
-    
+
     VULKAN_FN(vkCreateDevice);
     VULKAN_FN(vkDestroyInstance);
     VULKAN_FN(vkEnumerateDeviceExtensionProperties);
@@ -118,69 +123,69 @@ namespace dxvk::vk {
     VULKAN_FN(vkGetPhysicalDeviceSparseImageFormatProperties);
     VULKAN_FN(vkGetPhysicalDeviceSparseImageFormatProperties2);
 
-    #ifdef VK_KHR_get_surface_capabilities2
+#ifdef VK_KHR_get_surface_capabilities2
     VULKAN_FN(vkGetPhysicalDeviceSurfaceCapabilities2KHR);
     VULKAN_FN(vkGetPhysicalDeviceSurfaceFormats2KHR);
-    #endif
-    
-    #ifdef VK_KHR_surface
-    #ifdef VK_USE_PLATFORM_XCB_KHR
+#endif
+
+#ifdef VK_KHR_surface
+#ifdef VK_USE_PLATFORM_XCB_KHR
     VULKAN_FN(vkCreateXcbSurfaceKHR);
     VULKAN_FN(vkGetPhysicalDeviceXcbPresentationSupportKHR);
-    #endif
-    
-    #ifdef VK_USE_PLATFORM_XLIB_KHR
+#endif
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
     VULKAN_FN(vkCreateXlibSurfaceKHR);
     VULKAN_FN(vkGetPhysicalDeviceXlibPresentationSupportKHR);
-    #endif
-    
-    #ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#endif
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
     VULKAN_FN(vkCreateWaylandSurfaceKHR);
     VULKAN_FN(vkGetPhysicalDeviceWaylandPresentationSupportKHR);
-    #endif
-    
-    #ifdef VK_USE_PLATFORM_WIN32_KHR
+#endif
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     VULKAN_FN(vkCreateWin32SurfaceKHR);
     VULKAN_FN(vkGetPhysicalDeviceWin32PresentationSupportKHR);
-    #endif
-    
+#endif
+
     VULKAN_FN(vkDestroySurfaceKHR);
-    
+
     VULKAN_FN(vkGetPhysicalDeviceSurfaceSupportKHR);
     VULKAN_FN(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
     VULKAN_FN(vkGetPhysicalDeviceSurfaceFormatsKHR);
     VULKAN_FN(vkGetPhysicalDeviceSurfacePresentModesKHR);
-    #endif
-    
-    #ifdef VK_EXT_debug_utils
+#endif
+
+#ifdef VK_EXT_debug_utils
     VULKAN_FN(vkCmdBeginDebugUtilsLabelEXT);
     VULKAN_FN(vkCmdEndDebugUtilsLabelEXT);
     VULKAN_FN(vkCmdInsertDebugUtilsLabelEXT);
     VULKAN_FN(vkCreateDebugUtilsMessengerEXT);
     VULKAN_FN(vkDestroyDebugUtilsMessengerEXT);
     VULKAN_FN(vkSubmitDebugUtilsMessageEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_full_screen_exclusive
+#ifdef VK_EXT_full_screen_exclusive
     VULKAN_FN(vkGetPhysicalDeviceSurfacePresentModes2EXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_swapchain_maintenance1
+#ifdef VK_EXT_swapchain_maintenance1
     VULKAN_FN(vkReleaseSwapchainImagesEXT);
-    #endif
+#endif
   };
-  
-  
+
   /**
    * \brief Vulkan device functions
-   * 
+   *
    * Vulkan functions for a specific Vulkan device.
    * This ensures that no slow dispatch code is executed.
    */
-  struct DeviceFn : DeviceLoader {
-    DeviceFn(const Rc<InstanceLoader>& library, bool owned, VkDevice device);
+  struct DeviceFn : DeviceLoader
+  {
+    DeviceFn(const Rc<InstanceLoader> &library, bool owned, VkDevice device);
     ~DeviceFn();
-    
+
     VULKAN_FN(vkDestroyDevice);
     VULKAN_FN(vkGetDeviceQueue);
     VULKAN_FN(vkQueueSubmit);
@@ -349,28 +354,28 @@ namespace dxvk::vk {
     VULKAN_FN(vkCmdEndRendering);
     VULKAN_FN(vkCmdExecuteCommands);
 
-    #ifdef VK_KHR_swapchain
+#ifdef VK_KHR_swapchain
     VULKAN_FN(vkCreateSwapchainKHR);
     VULKAN_FN(vkDestroySwapchainKHR);
     VULKAN_FN(vkGetSwapchainImagesKHR);
     VULKAN_FN(vkAcquireNextImageKHR);
     VULKAN_FN(vkQueuePresentKHR);
-    #endif
+#endif
 
-    #ifdef VK_EXT_conditional_rendering
+#ifdef VK_EXT_conditional_rendering
     VULKAN_FN(vkCmdBeginConditionalRenderingEXT);
     VULKAN_FN(vkCmdEndConditionalRenderingEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_debug_utils
+#ifdef VK_EXT_debug_utils
     VULKAN_FN(vkQueueBeginDebugUtilsLabelEXT);
     VULKAN_FN(vkQueueEndDebugUtilsLabelEXT);
     VULKAN_FN(vkQueueInsertDebugUtilsLabelEXT);
     VULKAN_FN(vkSetDebugUtilsObjectNameEXT);
     VULKAN_FN(vkSetDebugUtilsObjectTagEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_extended_dynamic_state3
+#ifdef VK_EXT_extended_dynamic_state3
     VULKAN_FN(vkCmdSetTessellationDomainOriginEXT);
     VULKAN_FN(vkCmdSetDepthClampEnableEXT);
     VULKAN_FN(vkCmdSetPolygonModeEXT);
@@ -387,71 +392,76 @@ namespace dxvk::vk {
     VULKAN_FN(vkCmdSetExtraPrimitiveOverestimationSizeEXT);
     VULKAN_FN(vkCmdSetDepthClipEnableEXT);
     VULKAN_FN(vkCmdSetLineRasterizationModeEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_full_screen_exclusive
+#ifdef VK_EXT_full_screen_exclusive
     VULKAN_FN(vkAcquireFullScreenExclusiveModeEXT);
     VULKAN_FN(vkReleaseFullScreenExclusiveModeEXT);
     VULKAN_FN(vkGetDeviceGroupSurfacePresentModes2EXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_hdr_metadata
+#ifdef VK_EXT_hdr_metadata
     VULKAN_FN(vkSetHdrMetadataEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_shader_module_identifier
+#ifdef VK_EXT_shader_module_identifier
     VULKAN_FN(vkGetShaderModuleCreateInfoIdentifierEXT);
     VULKAN_FN(vkGetShaderModuleIdentifierEXT);
-    #endif
+#endif
 
-    #ifdef VK_EXT_transform_feedback
+#ifdef VK_EXT_transform_feedback
     VULKAN_FN(vkCmdBindTransformFeedbackBuffersEXT);
     VULKAN_FN(vkCmdBeginTransformFeedbackEXT);
     VULKAN_FN(vkCmdEndTransformFeedbackEXT);
     VULKAN_FN(vkCmdDrawIndirectByteCountEXT);
     VULKAN_FN(vkCmdBeginQueryIndexedEXT);
     VULKAN_FN(vkCmdEndQueryIndexedEXT);
-    #endif
+#endif
 
-    #ifdef VK_NVX_image_view_handle
+#ifdef VK_NVX_image_view_handle
     VULKAN_FN(vkGetImageViewHandleNVX);
     VULKAN_FN(vkGetImageViewAddressNVX);
-    #endif
+#endif
 
-    #ifdef VK_NVX_binary_import
+#ifdef VK_NVX_binary_import
     VULKAN_FN(vkCreateCuModuleNVX);
     VULKAN_FN(vkCreateCuFunctionNVX);
     VULKAN_FN(vkDestroyCuModuleNVX);
     VULKAN_FN(vkDestroyCuFunctionNVX);
     VULKAN_FN(vkCmdCuLaunchKernelNVX);
-    #endif
+#endif
 
-    #ifdef VK_KHR_external_memory_win32
+#ifdef VK_KHR_external_memory_win32
     VULKAN_FN(vkGetMemoryWin32HandleKHR);
     VULKAN_FN(vkGetMemoryWin32HandlePropertiesKHR);
-    #endif
+#endif
 
-    #ifdef VK_KHR_external_semaphore_win32
+#ifdef VK_KHR_external_semaphore_win32
     VULKAN_FN(vkGetSemaphoreWin32HandleKHR);
     VULKAN_FN(vkImportSemaphoreWin32HandleKHR);
-    #endif
+#endif
 
-    #ifdef VK_KHR_maintenance5
+#ifdef VK_EXT_calibrated_timestamps
+    VULKAN_FN(vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
+    VULKAN_FN(vkGetCalibratedTimestampsEXT);
+#endif
+
+#ifdef VK_KHR_maintenance5
     VULKAN_FN(vkCmdBindIndexBuffer2KHR);
     VULKAN_FN(vkGetRenderingAreaGranularityKHR);
     VULKAN_FN(vkGetDeviceImageSubresourceLayoutKHR);
     VULKAN_FN(vkGetImageSubresourceLayout2KHR);
-    #endif
+#endif
 
-    #ifdef VK_KHR_present_wait
+#ifdef VK_KHR_present_wait
     VULKAN_FN(vkWaitForPresentKHR);
-    #endif
+#endif
 
-    #ifdef VK_KHR_win32_keyed_mutex
+#ifdef VK_KHR_win32_keyed_mutex
     // Wine additions to actually use this extension.
     VULKAN_FN(wine_vkAcquireKeyedMutex);
     VULKAN_FN(wine_vkReleaseKeyedMutex);
-    #endif
+#endif
   };
-  
+
 }

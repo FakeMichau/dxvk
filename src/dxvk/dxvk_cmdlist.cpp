@@ -170,7 +170,8 @@ namespace dxvk {
   DxvkCommandList::DxvkCommandList(DxvkDevice* device)
   : m_device        (device),
     m_vkd           (device->vkd()),
-    m_vki           (device->instance()->vki()) {
+    m_vki           (device->instance()->vki()),
+    m_lfx2Tracker   (device) {
     const auto& graphicsQueue = m_device->queues().graphics;
     const auto& transferQueue = m_device->queues().transfer;
 
@@ -374,6 +375,7 @@ namespace dxvk {
     // Return query and event handles
     m_gpuQueryTracker.reset();
     m_gpuEventTracker.reset();
+    m_lfx2Tracker.reset();
 
     // Less important stuff
     m_signalTracker.reset();

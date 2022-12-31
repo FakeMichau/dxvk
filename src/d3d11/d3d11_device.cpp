@@ -2469,6 +2469,9 @@ namespace dxvk {
         return deviceFeatures.nvxBinaryImport
             && deviceFeatures.vk12.bufferDeviceAddress;
 
+      case D3D11_VK_LATENCYFLEX2:
+        return true; // TODO
+
       default:
         return false;
     }

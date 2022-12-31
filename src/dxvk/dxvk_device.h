@@ -98,6 +98,10 @@ namespace dxvk {
     Rc<vk::DeviceFn> vkd() const {
       return m_vkd;
     }
+
+    const DxvkLfx2 &lfx2() const {
+      return m_lfx2;
+    }
     
     /**
      * \brief Logical device handle
@@ -542,6 +546,7 @@ namespace dxvk {
     Rc<DxvkInstance>            m_instance;
     Rc<DxvkAdapter>             m_adapter;
     Rc<vk::DeviceFn>            m_vkd;
+    DxvkLfx2                    m_lfx2;
 
     DxvkDeviceFeatures          m_features;
     DxvkDeviceInfo              m_properties;

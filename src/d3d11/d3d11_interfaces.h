@@ -16,6 +16,7 @@ enum D3D11_VK_EXTENSION : uint32_t {
   D3D11_VK_EXT_BARRIER_CONTROL            = 3,
   D3D11_VK_NVX_BINARY_IMPORT              = 4,
   D3D11_VK_NVX_IMAGE_VIEW_HANDLE          = 5,
+  D3D11_VK_LATENCYFLEX2                   = 6,
 };
 
 
@@ -182,6 +183,17 @@ ID3D11VkExtContext1 : public ID3D11VkExtContext {
           uint32_t                numWriteResources) = 0;
 };
 
+MIDL_INTERFACE("6e65f21a-0ecd-4e76-8faf-9e9afa4093a4")
+ID3D11VkExtContext2 : public ID3D11VkExtContext1 {
+
+  virtual bool STDMETHODCALLTYPE MarkRenderStartLFX2(
+      void*                   lfx2Frame) = 0;
+
+  virtual bool STDMETHODCALLTYPE MarkRenderEndLFX2(
+      void*                   lfx2Frame) = 0;
+
+};
+
 
 #ifdef _MSC_VER
 struct __declspec(uuid("bb8a4fb9-3935-4762-b44b-35189a26414a")) ID3D11VkExtShader;
@@ -189,10 +201,12 @@ struct __declspec(uuid("8a6e3c42-f74c-45b7-8265-a231b677ca17")) ID3D11VkExtDevic
 struct __declspec(uuid("cfcf64ef-9586-46d0-bca4-97cf2ca61b06")) ID3D11VkExtDevice1;
 struct __declspec(uuid("fd0bca13-5cb6-4c3a-987e-4750de2ca791")) ID3D11VkExtContext;
 struct __declspec(uuid("874b09b2-ae0b-41d8-8476-5f3b7a0e879d")) ID3D11VkExtContext1;
+struct __declspec(uuid("6e65f21a-0ecd-4e76-8faf-9e9afa4093a4")) ID3D11VkExtContext2;
 #else
 __CRT_UUID_DECL(ID3D11VkExtShader,         0xbb8a4fb9,0x3935,0x4762,0xb4,0x4b,0x35,0x18,0x9a,0x26,0x41,0x4a);
 __CRT_UUID_DECL(ID3D11VkExtDevice,         0x8a6e3c42,0xf74c,0x45b7,0x82,0x65,0xa2,0x31,0xb6,0x77,0xca,0x17);
 __CRT_UUID_DECL(ID3D11VkExtDevice1,        0xcfcf64ef,0x9586,0x46d0,0xbc,0xa4,0x97,0xcf,0x2c,0xa6,0x1b,0x06);
 __CRT_UUID_DECL(ID3D11VkExtContext,        0xfd0bca13,0x5cb6,0x4c3a,0x98,0x7e,0x47,0x50,0xde,0x2c,0xa7,0x91);
 __CRT_UUID_DECL(ID3D11VkExtContext1,       0x874b09b2,0xae0b,0x41d8,0x84,0x76,0x5f,0x3b,0x7a,0x0e,0x87,0x9d);
+__CRT_UUID_DECL(ID3D11VkExtContext2,       0x6e65f21a,0x0ecd,0x4e76,0x8f,0xaf,0x9e,0x9a,0xfa,0x40,0x93,0xa4);
 #endif
