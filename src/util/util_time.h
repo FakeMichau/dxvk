@@ -23,17 +23,13 @@ namespace dxvk {
     }
 
     static inline time_point get_time_from_counter(int64_t counter) {
-      return time_point(duration(to_ns(counter)));
-    }
-
-    static inline int64_t to_ns(int64_t counter) {
       // Keep the frequency static, this doesn't change at all.
       static const int64_t freq = get_frequency();
 
       const int64_t whole = (counter / freq) * period::den;
       const int64_t part  = (counter % freq) * period::den / freq;
 
-      return whole + part;
+      return time_point(duration(whole + part));
     }
 
     static inline int64_t get_frequency() {

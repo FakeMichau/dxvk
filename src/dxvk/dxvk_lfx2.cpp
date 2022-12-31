@@ -31,6 +31,9 @@ namespace dxvk {
     LOAD_PFN(MarkSection);
     LOAD_PFN(SleepUntil);
     LOAD_PFN(TimestampNow);
+#ifdef _WIN32
+    LOAD_PFN(TimestampFromQpc);
+#endif
 
 #undef LOAD_PFN
   }
@@ -74,11 +77,19 @@ namespace dxvk {
           calibratedTimestampInfo[0].timeDomain = VK_TIME_DOMAIN_DEVICE_EXT;
           calibratedTimestampInfo[1].sType = VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT;
           calibratedTimestampInfo[1].pNext = nullptr;
+#ifdef _WIN32
           calibratedTimestampInfo[1].timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT;
+#else
+          calibratedTimestampInfo[1].timeDomain = VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT;
+#endif
           m_device->vkd()->vkGetCalibratedTimestampsEXT(m_device->handle(), 2, calibratedTimestampInfo,
                                                         calibratedTimestamps, maxDeviation);
 
-          uint64_t hostNsTimestamp = dxvk::high_resolution_clock::to_ns(calibratedTimestamps[1]);
+#ifdef _WIN32
+          uint64_t hostNsTimestamp = m_device->lfx2().TimestampFromQpc(calibratedTimestamps[1]);
+#else
+          uint64_t hostNsTimestamp = calibratedTimestamps[1];
+#endif
           int64_t gpuTimestampDelta = gpuTimestamp - calibratedTimestamps[0];
           int64_t timestamp = hostNsTimestamp + (int64_t) (gpuTimestampDelta *
                                                            (double) m_device->adapter()->deviceProperties().limits.timestampPeriod);

@@ -22,6 +22,9 @@ namespace dxvk {
     DECLARE_PFN(MarkSection);
     DECLARE_PFN(SleepUntil);
     DECLARE_PFN(TimestampNow);
+#ifdef _WIN32
+    DECLARE_PFN(TimestampFromQpc);
+#endif
 
 #undef DECLARE_PFN
 
