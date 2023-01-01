@@ -94,10 +94,10 @@ namespace dxvk {
           int64_t timestamp = hostNsTimestamp + (int64_t) (gpuTimestampDelta *
                                                            (double) m_device->adapter()->deviceProperties().limits.timestampPeriod);
 
-          m_device->lfx2().MarkSection(static_cast<const lfx2Frame *>(m_frame_handle[i]),
+          m_device->lfx2().MarkSection(static_cast<lfx2Frame *>(m_frame_handle[i]),
                                        1000, i == 0 ? lfx2MarkType::lfx2MarkTypeBegin : lfx2MarkType::lfx2MarkTypeEnd,
                                        timestamp);
-          m_device->lfx2().FrameRelease(static_cast<const lfx2Frame *>(m_frame_handle[i]));
+          m_device->lfx2().FrameRelease(static_cast<lfx2Frame *>(m_frame_handle[i]));
         }
       }
     }

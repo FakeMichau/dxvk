@@ -219,10 +219,10 @@ namespace dxvk {
   bool STDMETHODCALLTYPE D3D11DeviceContextExt<ContextType>::MarkRenderStartLFX2(void *frame) {
     auto query = m_ctx->m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
 
-    m_ctx->m_device->lfx2().FrameAddRef(static_cast<const lfx2Frame *>(frame));
+    m_ctx->m_device->lfx2().FrameAddRef(static_cast<lfx2Frame *>(frame));
     m_ctx->EmitCs([query, frame, cDevice = m_ctx->m_device] (DxvkContext* ctx) {
       auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(static_cast<const lfx2Frame *>(frame), 800, lfx2MarkType::lfx2MarkTypeBegin, cLfx2.TimestampNow());
+      cLfx2.MarkSection(static_cast<lfx2Frame *>(frame), 800, lfx2MarkType::lfx2MarkTypeBegin, cLfx2.TimestampNow());
       ctx->writeTimestamp(query);
       ctx->trackLatencyMarker(frame, query, false);
     });
@@ -233,10 +233,10 @@ namespace dxvk {
   bool STDMETHODCALLTYPE D3D11DeviceContextExt<ContextType>::MarkRenderEndLFX2(void *frame) {
     auto query = m_ctx->m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
 
-    m_ctx->m_device->lfx2().FrameAddRef(static_cast<const lfx2Frame *>(frame));
+    m_ctx->m_device->lfx2().FrameAddRef(static_cast<lfx2Frame *>(frame));
     m_ctx->EmitCs([query, frame, cDevice = m_ctx->m_device] (DxvkContext* ctx) {
       auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(static_cast<const lfx2Frame *>(frame), 800, lfx2MarkType::lfx2MarkTypeEnd, cLfx2.TimestampNow());
+      cLfx2.MarkSection(static_cast<lfx2Frame *>(frame), 800, lfx2MarkType::lfx2MarkTypeEnd, cLfx2.TimestampNow());
       ctx->writeTimestamp(query);
       ctx->trackLatencyMarker(frame, query, true);
     });
