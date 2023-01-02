@@ -178,6 +178,8 @@ namespace dxvk {
             HANDLE                      hEvent,
             BOOL                        Synchronize);
 
+  private:
+    Lfx2Frame m_implicitLfx2Frame {};
   };
   
 }

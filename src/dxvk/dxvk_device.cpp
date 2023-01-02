@@ -14,6 +14,7 @@ namespace dxvk {
     m_instance          (instance),
     m_adapter           (adapter),
     m_vkd               (vkd),
+    m_lfx2ImplicitContext(&m_lfx2),
     m_features          (features),
     m_properties        (adapter->devicePropertiesExt()),
     m_perfHints         (getPerfHints()),
@@ -337,6 +338,10 @@ namespace dxvk {
 
   void DxvkDevice::recycleCommandList(const Rc<DxvkCommandList>& cmdList) {
     m_recycledCommandLists.returnObject(cmdList);
+  }
+  
+  DxvkLfx2ImplicitContext *DxvkDevice::getImplicitLfx2Context() {
+      return &m_lfx2ImplicitContext;
   }
   
 }

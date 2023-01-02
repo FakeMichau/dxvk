@@ -6444,8 +6444,39 @@ namespace dxvk {
     this->beginCurrentCommands();
   }
 
-  void DxvkContext::trackLatencyMarker(void *frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
-    m_cmd->trackLatencyMarker(frame, std::move(timestampQuery), end);
+  void DxvkContext::trackLatencyMarker(Lfx2Frame frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
+    m_cmd->trackLatencyMarker(std::move(frame), std::move(timestampQuery), end);
+  }
+
+  void DxvkContext::tryBeginLfx2Frame(bool critical) {
+    if (m_type != DxvkContextType::Primary)
+      Logger::err("beginLfx2Frame should only be called on immediate contexts");
+    if (!m_lfx2Frame) {
+      m_lfx2Frame = m_device->getImplicitLfx2Context()->DequeueFrame(critical);
+      if (m_lfx2Frame) {
+        auto query = m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
+        m_device->lfx2().MarkSection(m_lfx2Frame,
+                                     800, lfx2MarkType::lfx2MarkTypeBegin,
+                                     m_device->lfx2().TimestampNow());
+        writeTimestamp(query);
+        trackLatencyMarker(m_lfx2Frame, query, false);
+      }
+    }
+  }
+
+  void DxvkContext::endLfx2Frame() {
+    if (m_type != DxvkContextType::Primary)
+      Logger::err("endLfx2Frame should only be called on immediate contexts");
+    tryBeginLfx2Frame(true);
+    if (m_lfx2Frame) {
+      auto query = m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
+      m_device->lfx2().MarkSection(m_lfx2Frame,
+                                   800, lfx2MarkType::lfx2MarkTypeEnd,
+                                   m_device->lfx2().TimestampNow());
+      writeTimestamp(query);
+      trackLatencyMarker(m_lfx2Frame, query, true);
+      m_lfx2Frame = {};
+    }
   }
 
 }

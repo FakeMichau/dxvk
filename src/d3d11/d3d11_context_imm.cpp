@@ -842,6 +842,7 @@ namespace dxvk {
     D3D10DeviceLock lock = LockContext();
 
     EmitCs<false>([] (DxvkContext* ctx) {
+      ctx->endLfx2Frame();
       ctx->endFrame();
     });
   }

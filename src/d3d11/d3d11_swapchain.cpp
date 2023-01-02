@@ -455,6 +455,7 @@ namespace dxvk {
     // Ensure that we can safely destroy the swap chain
     m_device->waitForSubmission(&m_presentStatus);
     m_device->waitForIdle();
+    m_device->getImplicitLfx2Context()->Reset();
 
     m_presentStatus.result = VK_SUCCESS;
     m_dirtyHdrMetadata = true;

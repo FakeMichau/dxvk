@@ -175,7 +175,7 @@ namespace dxvk {
 
         for (auto& chunk : chunks) {
           m_context->addStatCtr(DxvkStatCounter::CsChunkCount, 1);
-
+          m_context->tryBeginLfx2Frame(false);
           chunk->executeAll(m_context.ptr());
 
           // Use a separate mutex for the chunk counter, this

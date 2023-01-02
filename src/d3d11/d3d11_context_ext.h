@@ -75,8 +75,6 @@ namespace dxvk {
 
     bool STDMETHODCALLTYPE MarkRenderEndLFX2(void *lfx2Frame);
 
-    bool STDMETHODCALLTYPE SleepAndBeginFrameLFX2();
-
   private:
     
     ContextType* m_ctx;

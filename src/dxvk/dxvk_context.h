@@ -67,6 +67,9 @@ namespace dxvk {
      * \param [out] status Submission feedback
      */
     void flushCommandList(DxvkSubmitStatus* status);
+
+    void tryBeginLfx2Frame(bool critical);
+    void endLfx2Frame();
     
     /**
      * \brief Begins generating query data
@@ -1388,7 +1391,7 @@ namespace dxvk {
         m_cmd->addStatCtr(counter, value);
     }
 
-    void trackLatencyMarker(void *frame, Rc<DxvkGpuQuery> timestampQuery, bool end);
+    void trackLatencyMarker(Lfx2Frame frame, Rc<DxvkGpuQuery> timestampQuery, bool end);
 
   private:
     
@@ -1433,6 +1436,8 @@ namespace dxvk {
     std::array<DxvkShaderResourceSlot, MaxNumResourceSlots>  m_rc;
     std::array<DxvkGraphicsPipeline*, 4096> m_gpLookupCache = { };
     std::array<DxvkComputePipeline*,   256> m_cpLookupCache = { };
+
+    Lfx2Frame m_lfx2Frame = {};
 
     void blitImageFb(
       const Rc<DxvkImage>&        dstImage,

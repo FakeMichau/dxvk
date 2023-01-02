@@ -321,8 +321,8 @@ namespace dxvk {
       m_signalTracker.add(signal, value);
     }
 
-    void trackLatencyMarker(void *lfx2Frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
-      m_lfx2Tracker.add(lfx2Frame, std::move(timestampQuery), end);
+    void trackLatencyMarker(Lfx2Frame lfx2Frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
+      m_lfx2Tracker.add(std::move(lfx2Frame), std::move(timestampQuery), end);
     }
 
     /**

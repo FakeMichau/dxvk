@@ -99,7 +99,7 @@ namespace dxvk {
       return m_vkd;
     }
 
-    const DxvkLfx2 &lfx2() const {
+    const Lfx2Fn &lfx2() const {
       return m_lfx2;
     }
     
@@ -538,6 +538,8 @@ namespace dxvk {
      * used by the GPU can be safely destroyed.
      */
     void waitForIdle();
+
+    DxvkLfx2ImplicitContext* getImplicitLfx2Context();
     
   private:
     
@@ -546,7 +548,8 @@ namespace dxvk {
     Rc<DxvkInstance>            m_instance;
     Rc<DxvkAdapter>             m_adapter;
     Rc<vk::DeviceFn>            m_vkd;
-    DxvkLfx2                    m_lfx2;
+    Lfx2Fn                      m_lfx2;
+    DxvkLfx2ImplicitContext     m_lfx2ImplicitContext;
 
     DxvkDeviceFeatures          m_features;
     DxvkDeviceInfo              m_properties;

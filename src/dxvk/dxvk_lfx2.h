@@ -1,14 +1,15 @@
 #pragma once
 
+#include <deque>
 #include "dxvk_gpu_query.h"
 #include "latencyflex2.h"
 
 namespace dxvk {
 
-  class DxvkLfx2 {
+  class Lfx2Fn {
   public:
-    DxvkLfx2();
-    virtual ~DxvkLfx2();
+    Lfx2Fn();
+    virtual ~Lfx2Fn();
 
 #define DECLARE_PFN(x) \
     decltype(&::lfx2##x) x {}
@@ -35,17 +36,50 @@ namespace dxvk {
     HMODULE m_lfxModule{};
   };
 
+  class Lfx2Frame {
+  public:
+    Lfx2Frame();
+    Lfx2Frame(const Lfx2Fn &lfx2, lfx2Frame *lfx2Frame);
+    Lfx2Frame(const Lfx2Frame &other);
+    Lfx2Frame(Lfx2Frame &&other) noexcept;
+    ~Lfx2Frame();
+
+    Lfx2Frame& operator=(const Lfx2Frame &other);
+    Lfx2Frame& operator=(Lfx2Frame &&other) noexcept;
+
+    operator lfx2Frame *() const { return m_lfx2Frame; }
+
+  private:
+    const Lfx2Fn *m_lfx2{};
+    lfx2Frame *m_lfx2Frame{};
+  };
+
+  class DxvkLfx2ImplicitContext {
+  public:
+    explicit DxvkLfx2ImplicitContext(Lfx2Fn *lfx2);
+    ~DxvkLfx2ImplicitContext();
+    void EnqueueFrame(Lfx2Frame frame);
+    Lfx2Frame DequeueFrame(bool critical);
+    void Reset();
+
+  private:
+    Lfx2Fn *m_lfx2;
+    std::mutex m_mutex;
+    std::deque<Lfx2Frame> m_frames;
+    std::atomic_bool m_needReset = false;
+  };
+
   class DxvkLfx2Tracker {
   public:
     explicit DxvkLfx2Tracker(DxvkDevice *device);
-    void add(void *lfx2Frame, Rc<DxvkGpuQuery> query, bool end);
+    void add(Lfx2Frame frame, Rc<DxvkGpuQuery> query, bool end);
     void reset();
     void notify();
 
   private:
     DxvkDevice *m_device;
     Rc<DxvkGpuQuery> m_query[2]{};
-    void *m_frame_handle[2]{};
+    Lfx2Frame m_frame_handle[2]{};
   };
 
 } // dxvk

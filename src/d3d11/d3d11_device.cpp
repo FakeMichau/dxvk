@@ -2784,10 +2784,10 @@ namespace dxvk {
     return static_cast<ID3D11ShaderResourceView*>(got->second);
   }
 
+  void D3D11DeviceExt::EnqueueImplicitFrameLFX2(void *frame) {
+    m_device->GetDXVKDevice()->getImplicitLfx2Context()->EnqueueFrame(Lfx2Frame(m_device->GetDXVKDevice()->lfx2(), reinterpret_cast<lfx2Frame *>(frame)));
+  }
 
-
-  
-  
   D3D11VideoDevice::D3D11VideoDevice(
           D3D11DXGIDevice*        pContainer,
           D3D11Device*            pDevice)
@@ -3141,7 +3141,8 @@ namespace dxvk {
     }
     
     if (riid == __uuidof(ID3D11VkExtDevice)
-     || riid == __uuidof(ID3D11VkExtDevice1)) {
+     || riid == __uuidof(ID3D11VkExtDevice1)
+     || riid == __uuidof(ID3D11VkExtDevice2)) {
       *ppvObject = ref(&m_d3d11DeviceExt);
       return S_OK;
     }

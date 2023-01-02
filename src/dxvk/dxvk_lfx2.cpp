@@ -1,12 +1,14 @@
 #include "dxvk_lfx2.h"
 
+#include <utility>
+
 #include "../util/util_time.h"
 #include "dxvk_device.h"
 #include "../util/util_win32_compat.h"
 
 namespace dxvk {
 
-  DxvkLfx2::DxvkLfx2() {
+  Lfx2Fn::Lfx2Fn() {
 #ifdef _WIN32
     const auto lfxModuleName = "latencyflex2_rust.dll";
 #else
@@ -38,7 +40,7 @@ namespace dxvk {
 #undef LOAD_PFN
   }
 
-  DxvkLfx2::~DxvkLfx2() {
+  Lfx2Fn::~Lfx2Fn() {
     if (m_lfxModule == nullptr)
       return;
 
@@ -47,16 +49,16 @@ namespace dxvk {
   }
 
   template<typename T>
-  T DxvkLfx2::GetProcAddress(const char *name) {
+  T Lfx2Fn::GetProcAddress(const char *name) {
     return reinterpret_cast<T>(reinterpret_cast<void *>(::GetProcAddress(m_lfxModule, name)));
   }
 
   DxvkLfx2Tracker::DxvkLfx2Tracker(DxvkDevice *device) : m_device(device) {
   }
 
-  void DxvkLfx2Tracker::add(void *lfx2Frame, Rc<DxvkGpuQuery> query, bool end) {
+  void DxvkLfx2Tracker::add(Lfx2Frame lfx2Frame, Rc<DxvkGpuQuery> query, bool end) {
     m_query[end] = std::move(query);
-    m_frame_handle[end] = lfx2Frame;
+    m_frame_handle[end] = std::move(lfx2Frame);
   }
 
   void DxvkLfx2Tracker::notify() {
@@ -94,10 +96,9 @@ namespace dxvk {
           int64_t timestamp = hostNsTimestamp + (int64_t) (gpuTimestampDelta *
                                                            (double) m_device->adapter()->deviceProperties().limits.timestampPeriod);
 
-          m_device->lfx2().MarkSection(static_cast<lfx2Frame *>(m_frame_handle[i]),
+          m_device->lfx2().MarkSection(m_frame_handle[i],
                                        1000, i == 0 ? lfx2MarkType::lfx2MarkTypeBegin : lfx2MarkType::lfx2MarkTypeEnd,
                                        timestamp);
-          m_device->lfx2().FrameRelease(static_cast<lfx2Frame *>(m_frame_handle[i]));
         }
       }
     }
@@ -108,8 +109,100 @@ namespace dxvk {
       i = nullptr;
     }
     for (auto &i: m_frame_handle) {
-      i = nullptr;
+      i = {};
     }
   }
 
+  DxvkLfx2ImplicitContext::DxvkLfx2ImplicitContext(Lfx2Fn *lfx2): m_lfx2(lfx2) {
+  }
+
+  DxvkLfx2ImplicitContext::~DxvkLfx2ImplicitContext() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_frames.clear();
+  }
+
+  void DxvkLfx2ImplicitContext::EnqueueFrame(Lfx2Frame frame) {
+    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+    if (m_needReset.load()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+      lock.lock();
+      Logger::info("Reset LFX2 context done");
+      m_needReset.store(false);
+      m_frames.clear();
+    } else {
+      lock.lock();
+    }
+    m_frames.push_back(std::move(frame));
+    if (m_frames.size() >= 16) {
+      Logger::info("Resetting LFX2 context: too many inflight frames");
+      m_needReset.store(true);
+    }
+  }
+
+  Lfx2Frame DxvkLfx2ImplicitContext::DequeueFrame(bool critical) {
+    if (m_needReset.load()) {
+      return {};
+    }
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_frames.empty()) {
+      if (critical) {
+        Logger::info("Resetting LFX2 context: no frames");
+        m_needReset.store(true);
+      }
+      return {};
+    }
+    Lfx2Frame frame = std::move(m_frames.front());
+    m_frames.pop_front();
+    return frame;
+  }
+
+  void DxvkLfx2ImplicitContext::Reset() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    Logger::info("Resetting LFX2 context: initiated by swapchain");
+    m_needReset.store(true);
+  }
+
+  Lfx2Frame::Lfx2Frame() {
+
+  }
+
+  Lfx2Frame::Lfx2Frame(const Lfx2Fn &lfx2, lfx2Frame *lfx2Frame) : m_lfx2(&lfx2), m_lfx2Frame(lfx2Frame) {
+    m_lfx2->FrameAddRef(m_lfx2Frame);
+  }
+
+  Lfx2Frame::~Lfx2Frame() {
+    if (m_lfx2Frame != nullptr)
+      m_lfx2->FrameRelease(m_lfx2Frame);
+  }
+
+  Lfx2Frame::Lfx2Frame(const Lfx2Frame &other): m_lfx2(other.m_lfx2), m_lfx2Frame(other.m_lfx2Frame) {
+    m_lfx2->FrameAddRef(m_lfx2Frame);
+  }
+
+  Lfx2Frame::Lfx2Frame(Lfx2Frame &&other) noexcept : m_lfx2(other.m_lfx2), m_lfx2Frame(other.m_lfx2Frame) {
+    other.m_lfx2Frame = nullptr;
+  }
+
+  Lfx2Frame &Lfx2Frame::operator=(const Lfx2Frame &other) {
+    if (this != &other) {
+      if (m_lfx2Frame != nullptr)
+        m_lfx2->FrameRelease(m_lfx2Frame);
+
+      m_lfx2 = other.m_lfx2;
+      m_lfx2Frame = other.m_lfx2Frame;
+      m_lfx2->FrameAddRef(m_lfx2Frame);
+    }
+
+    return *this;
+  }
+
+  Lfx2Frame &Lfx2Frame::operator=(Lfx2Frame &&other) noexcept {
+    if (m_lfx2Frame != nullptr)
+      m_lfx2->FrameRelease(m_lfx2Frame);
+
+    m_lfx2 = other.m_lfx2;
+    m_lfx2Frame = other.m_lfx2Frame;
+    other.m_lfx2Frame = nullptr;
+    return *this;
+  }
 } // dxvk

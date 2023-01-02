@@ -507,7 +507,7 @@ namespace dxvk {
   /**
    * \brief Extended D3D11 device
    */
-  class D3D11DeviceExt : public ID3D11VkExtDevice1 {
+  class D3D11DeviceExt : public ID3D11VkExtDevice2 {
     
   public:
     
@@ -561,7 +561,9 @@ namespace dxvk {
             const D3D11_SAMPLER_DESC* pSamplerDesc,
             ID3D11SamplerState**      ppSamplerState,
             uint32_t*                 pDriverHandle);
-    
+
+    void STDMETHODCALLTYPE EnqueueImplicitFrameLFX2(void *lfx2Frame) override;
+
   private:
     
     D3D11DXGIDevice* m_container;
