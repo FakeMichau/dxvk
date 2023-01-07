@@ -2784,8 +2784,8 @@ namespace dxvk {
     return static_cast<ID3D11ShaderResourceView*>(got->second);
   }
 
-  void D3D11DeviceExt::EnqueueImplicitFrameLFX2(void *frame) {
-    m_device->GetDXVKDevice()->getImplicitLfx2Context()->EnqueueFrame(Lfx2Frame(m_device->GetDXVKDevice()->lfx2(), reinterpret_cast<lfx2Frame *>(frame)));
+  void *D3D11DeviceExt::GetImplicitContextLFX2() {
+    return m_device->GetDXVKDevice()->getImplicitLfx2Context()->context();
   }
 
   D3D11VideoDevice::D3D11VideoDevice(

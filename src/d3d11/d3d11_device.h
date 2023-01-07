@@ -562,7 +562,7 @@ namespace dxvk {
             ID3D11SamplerState**      ppSamplerState,
             uint32_t*                 pDriverHandle);
 
-    void STDMETHODCALLTYPE EnqueueImplicitFrameLFX2(void *lfx2Frame) override;
+    void* STDMETHODCALLTYPE GetImplicitContextLFX2();
 
   private:
     

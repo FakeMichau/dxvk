@@ -118,7 +118,7 @@ ID3D11VkExtDevice1 : public ID3D11VkExtDevice {
 MIDL_INTERFACE("a1a5185c-0c43-4608-91a0-97a0cd098d48")
 ID3D11VkExtDevice2 : public ID3D11VkExtDevice1 {
 
-  virtual void STDMETHODCALLTYPE EnqueueImplicitFrameLFX2(void *lfx2Frame) = 0;
+  virtual void* STDMETHODCALLTYPE GetImplicitContextLFX2() = 0;
 
 };
 

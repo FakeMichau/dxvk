@@ -6452,7 +6452,7 @@ namespace dxvk {
     if (m_type != DxvkContextType::Primary)
       Logger::err("beginLfx2Frame should only be called on immediate contexts");
     if (!m_lfx2Frame) {
-      m_lfx2Frame = m_device->getImplicitLfx2Context()->DequeueFrame(critical);
+      m_lfx2Frame = m_device->getImplicitLfx2Context()->dequeueFrame(critical);
       if (m_lfx2Frame) {
         auto query = m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
         m_device->lfx2().MarkSection(m_lfx2Frame,

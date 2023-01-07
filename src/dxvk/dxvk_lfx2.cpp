@@ -36,6 +36,11 @@ namespace dxvk {
 #ifdef _WIN32
     LOAD_PFN(TimestampFromQpc);
 #endif
+    LOAD_PFN(ImplicitContextCreate);
+    LOAD_PFN(ImplicitContextRelease);
+    LOAD_PFN(ImplicitContextReset);
+    LOAD_PFN(FrameCreateImplicit);
+    LOAD_PFN(FrameDequeueImplicit);
 
 #undef LOAD_PFN
   }
@@ -114,52 +119,23 @@ namespace dxvk {
   }
 
   DxvkLfx2ImplicitContext::DxvkLfx2ImplicitContext(Lfx2Fn *lfx2): m_lfx2(lfx2) {
+    m_context = m_lfx2->ImplicitContextCreate();
   }
 
   DxvkLfx2ImplicitContext::~DxvkLfx2ImplicitContext() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_frames.clear();
+    m_lfx2->ImplicitContextRelease(m_context);
   }
 
-  void DxvkLfx2ImplicitContext::EnqueueFrame(Lfx2Frame frame) {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
-    if (m_needReset.load()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(200));
-      lock.lock();
-      Logger::info("Reset LFX2 context done");
-      m_needReset.store(false);
-      m_frames.clear();
-    } else {
-      lock.lock();
-    }
-    m_frames.push_back(std::move(frame));
-    if (m_frames.size() >= 16) {
-      Logger::info("Resetting LFX2 context: too many inflight frames");
-      m_needReset.store(true);
-    }
+  Lfx2Frame DxvkLfx2ImplicitContext::dequeueFrame(bool critical) {
+    lfx2Frame *frame = m_lfx2->FrameDequeueImplicit(m_context, critical);
+    Lfx2Frame wrapper(*m_lfx2, frame);
+    if (frame)
+      m_lfx2->FrameRelease(frame);
+    return wrapper;
   }
 
-  Lfx2Frame DxvkLfx2ImplicitContext::DequeueFrame(bool critical) {
-    if (m_needReset.load()) {
-      return {};
-    }
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_frames.empty()) {
-      if (critical) {
-        Logger::info("Resetting LFX2 context: no frames");
-        m_needReset.store(true);
-      }
-      return {};
-    }
-    Lfx2Frame frame = std::move(m_frames.front());
-    m_frames.pop_front();
-    return frame;
-  }
-
-  void DxvkLfx2ImplicitContext::Reset() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    Logger::info("Resetting LFX2 context: initiated by swapchain");
-    m_needReset.store(true);
+  void DxvkLfx2ImplicitContext::reset() {
+    m_lfx2->ImplicitContextReset(m_context);
   }
 
   Lfx2Frame::Lfx2Frame() {
@@ -167,7 +143,8 @@ namespace dxvk {
   }
 
   Lfx2Frame::Lfx2Frame(const Lfx2Fn &lfx2, lfx2Frame *lfx2Frame) : m_lfx2(&lfx2), m_lfx2Frame(lfx2Frame) {
-    m_lfx2->FrameAddRef(m_lfx2Frame);
+    if (m_lfx2Frame)
+      m_lfx2->FrameAddRef(m_lfx2Frame);
   }
 
   Lfx2Frame::~Lfx2Frame() {

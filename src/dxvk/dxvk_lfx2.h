@@ -26,6 +26,11 @@ namespace dxvk {
 #ifdef _WIN32
     DECLARE_PFN(TimestampFromQpc);
 #endif
+    DECLARE_PFN(ImplicitContextCreate);
+    DECLARE_PFN(ImplicitContextRelease);
+    DECLARE_PFN(ImplicitContextReset);
+    DECLARE_PFN(FrameCreateImplicit);
+    DECLARE_PFN(FrameDequeueImplicit);
 
 #undef DECLARE_PFN
 
@@ -58,15 +63,13 @@ namespace dxvk {
   public:
     explicit DxvkLfx2ImplicitContext(Lfx2Fn *lfx2);
     ~DxvkLfx2ImplicitContext();
-    void EnqueueFrame(Lfx2Frame frame);
-    Lfx2Frame DequeueFrame(bool critical);
-    void Reset();
+    lfx2ImplicitContext *context() const { return m_context; }
+    Lfx2Frame dequeueFrame(bool critical);
+    void reset();
 
   private:
     Lfx2Fn *m_lfx2;
-    std::mutex m_mutex;
-    std::deque<Lfx2Frame> m_frames;
-    std::atomic_bool m_needReset = false;
+    lfx2ImplicitContext *m_context;
   };
 
   class DxvkLfx2Tracker {
