@@ -18,6 +18,7 @@ namespace dxvk {
     friend class D3D11SwapChain;
     friend class D3D11VideoContext;
     friend class D3D11DXGIKeyedMutex;
+    friend class D3D11DeviceLfx2Ext;
   public:
     
     D3D11ImmediateContext(

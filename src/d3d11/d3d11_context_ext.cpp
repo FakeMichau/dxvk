@@ -215,34 +215,6 @@ namespace dxvk {
     return true;
   }
 
-  template<typename ContextType>
-  bool STDMETHODCALLTYPE D3D11DeviceContextExt<ContextType>::MarkRenderStartLFX2(void *frame) {
-    auto query = m_ctx->m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
-    auto frameWrapper = Lfx2Frame(m_ctx->m_device->lfx2(), static_cast<lfx2Frame *>(frame));
-
-    m_ctx->EmitCs([query, cDevice = m_ctx->m_device, frameWrapper] (DxvkContext* ctx) {
-      auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeBegin, cLfx2.TimestampNow());
-      ctx->writeTimestamp(query);
-      ctx->trackLatencyMarker(frameWrapper, query, false);
-    });
-    return true;
-  }
-
-  template<typename ContextType>
-  bool STDMETHODCALLTYPE D3D11DeviceContextExt<ContextType>::MarkRenderEndLFX2(void *frame) {
-    auto query = m_ctx->m_device->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
-    auto frameWrapper = Lfx2Frame(m_ctx->m_device->lfx2(), static_cast<lfx2Frame *>(frame));
-
-    m_ctx->EmitCs([query, cDevice = m_ctx->m_device, frameWrapper] (DxvkContext* ctx) {
-      auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeEnd, cLfx2.TimestampNow());
-      ctx->writeTimestamp(query);
-      ctx->trackLatencyMarker(frameWrapper, query, true);
-    });
-    return true;
-  }
-
   template class D3D11DeviceContextExt<D3D11DeferredContext>;
   template class D3D11DeviceContextExt<D3D11ImmediateContext>;
 

@@ -2784,10 +2784,6 @@ namespace dxvk {
     return static_cast<ID3D11ShaderResourceView*>(got->second);
   }
 
-  void *D3D11DeviceExt::GetImplicitContextLFX2() {
-    return m_device->GetDXVKDevice()->getImplicitLfx2Context()->context();
-  }
-
   D3D11VideoDevice::D3D11VideoDevice(
           D3D11DXGIDevice*        pContainer,
           D3D11Device*            pDevice)
@@ -3087,6 +3083,7 @@ namespace dxvk {
     m_dxvkDevice    (pDxvkDevice),
     m_d3d11Device   (this, FeatureLevel, FeatureFlags),
     m_d3d11DeviceExt(this, &m_d3d11Device),
+    m_d3d11DeviceLfx2Ext(this, m_d3d11Device.m_context.ptr()),
     m_d3d11Interop  (this, &m_d3d11Device),
     m_d3d11Video    (this, &m_d3d11Device),
     m_d3d11on12     (this, &m_d3d11Device, pD3D12Device, pD3D12Queue),
@@ -3141,9 +3138,13 @@ namespace dxvk {
     }
     
     if (riid == __uuidof(ID3D11VkExtDevice)
-     || riid == __uuidof(ID3D11VkExtDevice1)
-     || riid == __uuidof(ID3D11VkExtDevice2)) {
+     || riid == __uuidof(ID3D11VkExtDevice1)) {
       *ppvObject = ref(&m_d3d11DeviceExt);
+      return S_OK;
+    }
+
+    if (riid == __uuidof(ID3DLfx2ExtDevice)) {
+      *ppvObject = ref(&m_d3d11DeviceLfx2Ext);
       return S_OK;
     }
     
@@ -3432,4 +3433,50 @@ namespace dxvk {
     return m_dxvkDevice;
   }
 
+  D3D11DeviceLfx2Ext::D3D11DeviceLfx2Ext(
+      D3D11DXGIDevice*        pContainer,
+      D3D11ImmediateContext*            pImmediateContext)
+      : m_container(pContainer), m_immediateContext(pImmediateContext), m_dxvkDevice(pContainer->GetDXVKDevice()) {
+
+  }
+
+  HRESULT STDMETHODCALLTYPE D3D11DeviceLfx2Ext::QueryInterface(const IID &riid, void **ppvObject) {
+    return m_container->QueryInterface(riid, ppvObject);
+  }
+
+  ULONG STDMETHODCALLTYPE D3D11DeviceLfx2Ext::AddRef() {
+    return m_container->AddRef();
+  }
+
+  ULONG STDMETHODCALLTYPE D3D11DeviceLfx2Ext::Release() {
+    return m_container->Release();
+  }
+
+  void STDMETHODCALLTYPE D3D11DeviceLfx2Ext::ImplicitBeginFrame(uint64_t *outTimestamp, void *outFrame) {
+    *(lfx2Frame **)outFrame = m_dxvkDevice->lfx2().FrameCreateImplicit(m_dxvkDevice->getImplicitLfx2Context()->context(), outTimestamp);
+  }
+
+  void STDMETHODCALLTYPE D3D11DeviceLfx2Ext::MarkRenderStart(void *frame) {
+    auto query = m_dxvkDevice->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
+    auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
+
+    m_immediateContext->EmitCs([query, cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
+      auto &cLfx2 = cDevice->lfx2();
+      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeBegin, cLfx2.TimestampNow());
+      ctx->writeTimestamp(query);
+      ctx->trackLatencyMarker(frameWrapper, query, false);
+    });
+  }
+
+  void STDMETHODCALLTYPE D3D11DeviceLfx2Ext::MarkRenderEnd(void *frame) {
+    auto query = m_dxvkDevice->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
+    auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
+
+    m_immediateContext->EmitCs([query, cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
+      auto &cLfx2 = cDevice->lfx2();
+      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeEnd, cLfx2.TimestampNow());
+      ctx->writeTimestamp(query);
+      ctx->trackLatencyMarker(frameWrapper, query, true);
+    });
+  }
 }

@@ -8,7 +8,7 @@ namespace dxvk {
   class D3D11ImmediateContext;
 
   template<typename ContextType>
-  class D3D11DeviceContextExt : public ID3D11VkExtContext2 {
+  class D3D11DeviceContextExt : public ID3D11VkExtContext1 {
     
   public:
     
@@ -70,10 +70,6 @@ namespace dxvk {
             uint32_t                NumReadResources,
             void* const*            pWriteResources,
             uint32_t                NumWriteResources);
-
-    bool STDMETHODCALLTYPE MarkRenderStartLFX2(void *lfx2Frame);
-
-    bool STDMETHODCALLTYPE MarkRenderEndLFX2(void *lfx2Frame);
 
   private:
     

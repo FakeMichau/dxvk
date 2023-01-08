@@ -48,6 +48,7 @@ namespace dxvk {
    * as part of a \ref D3D11DeviceContainer.
    */
   class D3D11Device final : public ID3D11Device5 {
+    friend class D3D11DXGIDevice;
     /// Maximum number of resource init commands per command buffer
     constexpr static uint64_t InitCommandThreshold = 50;
   public:
@@ -507,7 +508,7 @@ namespace dxvk {
   /**
    * \brief Extended D3D11 device
    */
-  class D3D11DeviceExt : public ID3D11VkExtDevice2 {
+  class D3D11DeviceExt : public ID3D11VkExtDevice1 {
     
   public:
     
@@ -561,8 +562,6 @@ namespace dxvk {
             const D3D11_SAMPLER_DESC* pSamplerDesc,
             ID3D11SamplerState**      ppSamplerState,
             uint32_t*                 pDriverHandle);
-
-    void* STDMETHODCALLTYPE GetImplicitContextLFX2();
 
   private:
     
@@ -696,6 +695,29 @@ namespace dxvk {
     D3D11DXGIDevice* m_container;
     D3D11Device*     m_device;
 
+  };
+
+  class D3D11DeviceLfx2Ext : public ID3DLfx2ExtDevice {
+  public:
+    D3D11DeviceLfx2Ext(D3D11DXGIDevice *pContainer,
+                       D3D11ImmediateContext *pImmediateContext);
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(const IID &riid, void **ppvObject);
+
+    ULONG STDMETHODCALLTYPE AddRef();
+
+    ULONG STDMETHODCALLTYPE Release();
+
+    void STDMETHODCALLTYPE ImplicitBeginFrame(uint64_t *outTimestamp, void *outFrame);
+
+    void STDMETHODCALLTYPE MarkRenderStart(void *frame);
+
+    void STDMETHODCALLTYPE MarkRenderEnd(void *frame);
+
+  private:
+    D3D11DXGIDevice *m_container;
+    D3D11ImmediateContext *m_immediateContext;
+    const Rc<DxvkDevice> m_dxvkDevice;
   };
 
 
@@ -860,6 +882,7 @@ namespace dxvk {
 
     D3D11Device         m_d3d11Device;
     D3D11DeviceExt      m_d3d11DeviceExt;
+    D3D11DeviceLfx2Ext  m_d3d11DeviceLfx2Ext;
     D3D11VkInterop      m_d3d11Interop;
     D3D11VideoDevice    m_d3d11Video;
     D3D11on12Device     m_d3d11on12;
