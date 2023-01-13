@@ -49,6 +49,10 @@ namespace dxvk {
     if (m_lfxModule == nullptr)
       return;
 
+    // Calling FreeLibrary deadlocks if called from DllMain.
+    if (this_thread::isInModuleDetachment())
+      return;
+
     ::FreeLibrary(m_lfxModule);
     m_lfxModule = nullptr;
   }
