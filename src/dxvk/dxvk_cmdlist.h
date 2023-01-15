@@ -321,17 +321,12 @@ namespace dxvk {
       m_signalTracker.add(signal, value);
     }
 
-    void trackLatencyMarker(Lfx2Frame lfx2Frame, Rc<DxvkGpuQuery> timestampQuery, bool end) {
-      m_lfx2Tracker.add(std::move(lfx2Frame), std::move(timestampQuery), end);
-    }
-
     /**
      * \brief Notifies resources and signals
      */
     void notifyObjects() {
       m_resources.notify();
       m_signalTracker.notify();
-      m_lfx2Tracker.notify();
     }
 
     /**
@@ -1033,6 +1028,10 @@ namespace dxvk {
       m_descriptorPools.push_back({ pool, manager });
     }
 
+    void setLfx2Aux(lfx2VulkanSubmitAux aux) {
+      m_lfx2Aux = aux;
+    }
+
   private:
     
     DxvkDevice*               m_device;
@@ -1057,7 +1056,6 @@ namespace dxvk {
     DxvkGpuQueryTracker       m_gpuQueryTracker;
     DxvkBufferTracker         m_bufferTracker;
     DxvkStatCounters          m_statCounters;
-    DxvkLfx2Tracker           m_lfx2Tracker;
 
     DxvkCommandSubmission     m_commandSubmission;
 
@@ -1072,6 +1070,8 @@ namespace dxvk {
       Rc<DxvkDescriptorManager>>> m_descriptorPools;
 
     std::vector<DxvkGraphicsPipeline*> m_pipelines;
+
+    lfx2VulkanSubmitAux m_lfx2Aux = {};
 
     VkCommandBuffer getCmdBuffer(DxvkCmdBuffer cmdBuffer) const {
       if (cmdBuffer == DxvkCmdBuffer::ExecBuffer) return m_cmd.execBuffer;

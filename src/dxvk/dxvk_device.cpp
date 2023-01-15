@@ -22,6 +22,7 @@ namespace dxvk {
     m_queues            (queues),
     m_submissionQueue   (this, queueCallback) {
 
+    m_lfx2Vk = m_lfx2.VulkanContextCreate(instance->vki()->getLoaderProc(), instance->handle(), m_adapter->handle(), m_vkd->device(), queues().graphics.queueIndex);
   }
   
   
@@ -40,6 +41,8 @@ namespace dxvk {
     // Stop workers explicitly in order to prevent
     // access to structures that are being destroyed.
     m_objects.pipelineManager().stopWorkerThreads();
+
+    m_lfx2.VulkanContextRelease(m_lfx2Vk);
   }
 
 
@@ -338,6 +341,10 @@ namespace dxvk {
 
   void DxvkDevice::recycleCommandList(const Rc<DxvkCommandList>& cmdList) {
     m_recycledCommandLists.returnObject(cmdList);
+  }
+
+  lfx2VulkanContext *DxvkDevice::getLfx2VkContext() {
+    return m_lfx2Vk;
   }
   
   DxvkLfx2ImplicitContext *DxvkDevice::getImplicitLfx2Context() {

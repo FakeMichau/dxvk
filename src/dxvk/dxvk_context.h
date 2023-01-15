@@ -1391,8 +1391,6 @@ namespace dxvk {
         m_cmd->addStatCtr(counter, value);
     }
 
-    void trackLatencyMarker(Lfx2Frame frame, Rc<DxvkGpuQuery> timestampQuery, bool end);
-
   private:
     
     Rc<DxvkDevice>          m_device;

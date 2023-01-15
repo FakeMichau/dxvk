@@ -41,6 +41,12 @@ namespace dxvk {
     LOAD_PFN(ImplicitContextReset);
     LOAD_PFN(FrameCreateImplicit);
     LOAD_PFN(FrameDequeueImplicit);
+    LOAD_PFN(VulkanContextCreate);
+    LOAD_PFN(VulkanContextAddRef);
+    LOAD_PFN(VulkanContextRelease);
+    LOAD_PFN(VulkanContextBeforeSubmit);
+    LOAD_PFN(VulkanContextBeginFrame);
+    LOAD_PFN(VulkanContextEndFrame);
 
 #undef LOAD_PFN
   }
@@ -60,66 +66,6 @@ namespace dxvk {
   template<typename T>
   T Lfx2Fn::GetProcAddress(const char *name) {
     return reinterpret_cast<T>(reinterpret_cast<void *>(::GetProcAddress(m_lfxModule, name)));
-  }
-
-  DxvkLfx2Tracker::DxvkLfx2Tracker(DxvkDevice *device) : m_device(device) {
-  }
-
-  void DxvkLfx2Tracker::add(Lfx2Frame lfx2Frame, Rc<DxvkGpuQuery> query, bool end) {
-    m_query[end] = std::move(query);
-    m_frame_handle[end] = std::move(lfx2Frame);
-  }
-
-  void DxvkLfx2Tracker::notify() {
-    for (uint32_t i = 0; i < 2; i++) {
-      Rc<DxvkGpuQuery> &query = m_query[i];
-      if (query.ptr()) {
-        DxvkQueryData queryData; // NOLINT(cppcoreguidelines-pro-type-member-init)
-        DxvkGpuQueryStatus status;
-        while ((status = query->getData(queryData)) == DxvkGpuQueryStatus::Pending);
-
-        if (status == DxvkGpuQueryStatus::Available) {
-          uint64_t gpuTimestamp = queryData.timestamp.time;
-          VkCalibratedTimestampInfoEXT calibratedTimestampInfo[2];
-          uint64_t calibratedTimestamps[2];
-          uint64_t maxDeviation[2];
-          calibratedTimestampInfo[0].sType = VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT;
-          calibratedTimestampInfo[0].pNext = nullptr;
-          calibratedTimestampInfo[0].timeDomain = VK_TIME_DOMAIN_DEVICE_EXT;
-          calibratedTimestampInfo[1].sType = VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT;
-          calibratedTimestampInfo[1].pNext = nullptr;
-#ifdef _WIN32
-          calibratedTimestampInfo[1].timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT;
-#else
-          calibratedTimestampInfo[1].timeDomain = VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT;
-#endif
-          m_device->vkd()->vkGetCalibratedTimestampsEXT(m_device->handle(), 2, calibratedTimestampInfo,
-                                                        calibratedTimestamps, maxDeviation);
-
-#ifdef _WIN32
-          uint64_t hostNsTimestamp = m_device->lfx2().TimestampFromQpc(calibratedTimestamps[1]);
-#else
-          uint64_t hostNsTimestamp = calibratedTimestamps[1];
-#endif
-          int64_t gpuTimestampDelta = gpuTimestamp - calibratedTimestamps[0];
-          int64_t timestamp = hostNsTimestamp + (int64_t) (gpuTimestampDelta *
-                                                           (double) m_device->adapter()->deviceProperties().limits.timestampPeriod);
-
-          m_device->lfx2().MarkSection(m_frame_handle[i],
-                                       1000, i == 0 ? lfx2MarkType::lfx2MarkTypeBegin : lfx2MarkType::lfx2MarkTypeEnd,
-                                       timestamp);
-        }
-      }
-    }
-  }
-
-  void DxvkLfx2Tracker::reset() {
-    for (auto &i: m_query) {
-      i = nullptr;
-    }
-    for (auto &i: m_frame_handle) {
-      i = {};
-    }
   }
 
   DxvkLfx2ImplicitContext::DxvkLfx2ImplicitContext(Lfx2Fn *lfx2): m_lfx2(lfx2) {

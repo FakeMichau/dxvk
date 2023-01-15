@@ -539,6 +539,7 @@ namespace dxvk {
      */
     void waitForIdle();
 
+    lfx2VulkanContext* getLfx2VkContext();
     DxvkLfx2ImplicitContext* getImplicitLfx2Context();
     
   private:
@@ -549,6 +550,7 @@ namespace dxvk {
     Rc<DxvkAdapter>             m_adapter;
     Rc<vk::DeviceFn>            m_vkd;
     Lfx2Fn                      m_lfx2;
+    lfx2VulkanContext          *m_lfx2Vk;
     DxvkLfx2ImplicitContext     m_lfx2ImplicitContext;
 
     DxvkDeviceFeatures          m_features;

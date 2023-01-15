@@ -3457,26 +3457,21 @@ namespace dxvk {
   }
 
   void STDMETHODCALLTYPE D3D11DeviceLfx2Ext::MarkRenderStart(void *frame) {
-    auto query = m_dxvkDevice->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
     auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
 
-    m_immediateContext->EmitCs([query, cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
+    m_immediateContext->EmitCs([cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
       auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeBegin, cLfx2.TimestampNow());
-      ctx->writeTimestamp(query);
-      ctx->trackLatencyMarker(frameWrapper, query, false);
+      cLfx2.VulkanContextBeginFrame(cDevice->getLfx2VkContext(), frameWrapper);
     });
   }
 
   void STDMETHODCALLTYPE D3D11DeviceLfx2Ext::MarkRenderEnd(void *frame) {
-    auto query = m_dxvkDevice->createGpuQuery(VK_QUERY_TYPE_TIMESTAMP, 0, 0);
     auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
 
-    m_immediateContext->EmitCs([query, cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
+    m_immediateContext->EmitCs([cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
       auto &cLfx2 = cDevice->lfx2();
-      cLfx2.MarkSection(frameWrapper, 800, lfx2MarkType::lfx2MarkTypeEnd, cLfx2.TimestampNow());
-      ctx->writeTimestamp(query);
-      ctx->trackLatencyMarker(frameWrapper, query, true);
+      ctx->flushCommandList();
+      cLfx2.VulkanContextEndFrame(cDevice->getLfx2VkContext(), frameWrapper);
     });
   }
 }

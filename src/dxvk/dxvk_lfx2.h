@@ -31,6 +31,12 @@ namespace dxvk {
     DECLARE_PFN(ImplicitContextReset);
     DECLARE_PFN(FrameCreateImplicit);
     DECLARE_PFN(FrameDequeueImplicit);
+    DECLARE_PFN(VulkanContextCreate);
+    DECLARE_PFN(VulkanContextAddRef);
+    DECLARE_PFN(VulkanContextRelease);
+    DECLARE_PFN(VulkanContextBeforeSubmit);
+    DECLARE_PFN(VulkanContextBeginFrame);
+    DECLARE_PFN(VulkanContextEndFrame);
 
 #undef DECLARE_PFN
 
@@ -70,19 +76,6 @@ namespace dxvk {
   private:
     Lfx2Fn *m_lfx2;
     lfx2ImplicitContext *m_context;
-  };
-
-  class DxvkLfx2Tracker {
-  public:
-    explicit DxvkLfx2Tracker(DxvkDevice *device);
-    void add(Lfx2Frame frame, Rc<DxvkGpuQuery> query, bool end);
-    void reset();
-    void notify();
-
-  private:
-    DxvkDevice *m_device;
-    Rc<DxvkGpuQuery> m_query[2]{};
-    Lfx2Frame m_frame_handle[2]{};
   };
 
 } // dxvk

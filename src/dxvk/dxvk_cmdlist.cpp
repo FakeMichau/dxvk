@@ -170,8 +170,7 @@ namespace dxvk {
   DxvkCommandList::DxvkCommandList(DxvkDevice* device)
   : m_device        (device),
     m_vkd           (device->vkd()),
-    m_vki           (device->instance()->vki()),
-    m_lfx2Tracker   (device) {
+    m_vki           (device->instance()->vki()) {
     const auto& graphicsQueue = m_device->queues().graphics;
     const auto& transferQueue = m_device->queues().transfer;
 
@@ -273,6 +272,9 @@ namespace dxvk {
           0, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT);
       }
 
+      if (isFirst && m_lfx2Aux.submit_before)
+        m_commandSubmission.executeCommandBuffer(m_lfx2Aux.submit_before);
+
       // Submit graphics commands
       if (cmd.usedFlags.test(DxvkCmdBuffer::InitBuffer))
         m_commandSubmission.executeCommandBuffer(cmd.initBuffer);
@@ -296,6 +298,12 @@ namespace dxvk {
         // Signal synchronization fence on final submission
         m_commandSubmission.signalFence(m_fence);
       }
+
+      if (isLast && m_lfx2Aux.submit_after)
+        m_commandSubmission.executeCommandBuffer(m_lfx2Aux.submit_after);
+      if (isLast && m_lfx2Aux.signal_sem)
+        m_commandSubmission.signalSemaphore(m_lfx2Aux.signal_sem, m_lfx2Aux.signal_sem_value,
+                                            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
 
       // Finally, submit all graphics commands of the current submission
       if ((status = m_commandSubmission.submit(m_device, graphics.queueHandle)))
@@ -365,6 +373,8 @@ namespace dxvk {
 
 
   void DxvkCommandList::reset() {
+    m_lfx2Aux = {};
+
     // Free resources and other objects
     // that are no longer in use
     m_resources.reset();
@@ -375,7 +385,6 @@ namespace dxvk {
     // Return query and event handles
     m_gpuQueryTracker.reset();
     m_gpuEventTracker.reset();
-    m_lfx2Tracker.reset();
 
     // Less important stuff
     m_signalTracker.reset();
