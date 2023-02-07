@@ -21,6 +21,8 @@ namespace dxvk {
     DECLARE_PFN(FrameAddRef);
     DECLARE_PFN(FrameRelease);
     DECLARE_PFN(MarkSection);
+    DECLARE_PFN(FrameOverrideQueuingDelay);
+    DECLARE_PFN(FrameOverrideInverseThroughput);
     DECLARE_PFN(SleepUntil);
     DECLARE_PFN(TimestampNow);
 #ifdef _WIN32

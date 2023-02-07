@@ -31,6 +31,8 @@ namespace dxvk {
     LOAD_PFN(FrameAddRef);
     LOAD_PFN(FrameRelease);
     LOAD_PFN(MarkSection);
+    LOAD_PFN(FrameOverrideQueuingDelay);
+    LOAD_PFN(FrameOverrideInverseThroughput);
     LOAD_PFN(SleepUntil);
     LOAD_PFN(TimestampNow);
 #ifdef _WIN32

@@ -68,7 +68,9 @@ namespace dxvk {
      */
     void flushCommandList(DxvkSubmitStatus* status);
 
-    void tryBeginLfx2Frame(bool critical);
+    void tryBeginLfx2FrameImplicit(bool critical);
+    void endLfx2FrameImplicit();
+    void beginLfx2Frame(Lfx2Frame frame);
     void endLfx2Frame();
     
     /**
@@ -1391,6 +1393,11 @@ namespace dxvk {
         m_cmd->addStatCtr(counter, value);
     }
 
+    void recordChunkExecutionTiming(uint64_t duration, uint64_t queueingDelay) {
+      m_frameCsTime += duration;
+      m_minQueuingDelay = std::min(m_minQueuingDelay, queueingDelay);
+    }
+
   private:
     
     Rc<DxvkDevice>          m_device;
@@ -1436,6 +1443,8 @@ namespace dxvk {
     std::array<DxvkComputePipeline*,   256> m_cpLookupCache = { };
 
     Lfx2Frame m_lfx2Frame = {};
+    uint64_t m_frameCsTime = 0;
+    uint64_t m_minQueuingDelay = 0;
 
     void blitImageFb(
       const Rc<DxvkImage>&        dstImage,
@@ -1743,7 +1752,6 @@ namespace dxvk {
     void endCurrentCommands();
 
     void splitCommands();
-
   };
   
 }

@@ -3460,8 +3460,7 @@ namespace dxvk {
     auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
 
     m_immediateContext->EmitCs([cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
-      auto &cLfx2 = cDevice->lfx2();
-      cLfx2.VulkanContextBeginFrame(cDevice->getLfx2VkContext(), frameWrapper);
+      ctx->beginLfx2Frame(frameWrapper);
     });
   }
 
@@ -3469,9 +3468,7 @@ namespace dxvk {
     auto frameWrapper = Lfx2Frame(m_dxvkDevice->lfx2(), static_cast<lfx2Frame *>(frame));
 
     m_immediateContext->EmitCs([cDevice = m_dxvkDevice, frameWrapper] (DxvkContext* ctx) {
-      auto &cLfx2 = cDevice->lfx2();
-      ctx->flushCommandList();
-      cLfx2.VulkanContextEndFrame(cDevice->getLfx2VkContext(), frameWrapper);
+      ctx->endLfx2Frame();
     });
   }
 }

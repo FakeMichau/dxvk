@@ -233,10 +233,18 @@ namespace dxvk {
      * that it can be reused later.
      */
     void reset();
+
+    void finalize();
+
+    high_resolution_clock::time_point getQueuedTimestamp() {
+      return m_queuedTimestamp;
+    }
     
   private:
     
     size_t m_commandOffset = 0;
+
+    high_resolution_clock::time_point m_queuedTimestamp;
     
     DxvkCsCmd* m_head = nullptr;
     DxvkCsCmd* m_tail = nullptr;

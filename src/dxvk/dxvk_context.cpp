@@ -1,4 +1,5 @@
 #include <cstring>
+#include <utility>
 #include <vector>
 #include <utility>
 
@@ -6446,28 +6447,41 @@ namespace dxvk {
     this->beginCurrentCommands();
   }
 
-  void DxvkContext::tryBeginLfx2Frame(bool critical) {
-    if (m_type != DxvkContextType::Primary)
-      Logger::err("beginLfx2Frame should only be called on immediate contexts");
+  void DxvkContext::tryBeginLfx2FrameImplicit(bool critical) {
     if (!m_lfx2Frame) {
-      m_lfx2Frame = m_device->getImplicitLfx2Context()->dequeueFrame(critical);
-      if (m_lfx2Frame) {
-        auto &cLfx2 = m_device->lfx2();
-        cLfx2.VulkanContextBeginFrame(m_device->getLfx2VkContext(), m_lfx2Frame);
+      auto lfx2Frame = m_device->getImplicitLfx2Context()->dequeueFrame(critical);
+      if (lfx2Frame) {
+        beginLfx2Frame(lfx2Frame);
       }
     }
+  }
+
+  void DxvkContext::endLfx2FrameImplicit() {
+    tryBeginLfx2FrameImplicit(true);
+    if (m_lfx2Frame) {
+      endLfx2Frame();
+    }
+  }
+
+  void DxvkContext::beginLfx2Frame(Lfx2Frame frame) {
+    if (m_type != DxvkContextType::Primary)
+      Logger::err("beginLfx2Frame should only be called on immediate contexts");
+    auto &cLfx2 = m_device->lfx2();
+    m_lfx2Frame = std::move(frame);
+    cLfx2.VulkanContextBeginFrame(m_device->getLfx2VkContext(), m_lfx2Frame);
+    m_frameCsTime = 0;
+    m_minQueuingDelay = UINT64_MAX;
   }
 
   void DxvkContext::endLfx2Frame() {
     if (m_type != DxvkContextType::Primary)
       Logger::err("endLfx2Frame should only be called on immediate contexts");
-    tryBeginLfx2Frame(true);
-    if (m_lfx2Frame) {
-      flushCommandList();
-      auto &cLfx2 = m_device->lfx2();
-      cLfx2.VulkanContextEndFrame(m_device->getLfx2VkContext(), m_lfx2Frame);
-      m_lfx2Frame = {};
-    }
+    flushCommandList();
+    auto &cLfx2 = m_device->lfx2();
+    cLfx2.VulkanContextEndFrame(m_device->getLfx2VkContext(), m_lfx2Frame);
+    cLfx2.FrameOverrideInverseThroughput(m_lfx2Frame, 800, m_frameCsTime);
+    if (m_minQueuingDelay != UINT64_MAX)
+      cLfx2.FrameOverrideQueuingDelay(m_lfx2Frame, 0, m_minQueuingDelay);
+    m_lfx2Frame = {};
   }
-
 }

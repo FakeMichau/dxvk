@@ -843,7 +843,7 @@ namespace dxvk {
 
     EmitCs<false>([] (DxvkContext* ctx) {
       ctx->endFrame();
-      ctx->endLfx2Frame();
+      ctx->endLfx2FrameImplicit();
     });
   }
 
@@ -892,6 +892,7 @@ namespace dxvk {
   
   
   void D3D11ImmediateContext::EmitCsChunk(DxvkCsChunkRef&& chunk) {
+    chunk->finalize();
     m_csSeqNum = m_csThread.dispatchChunk(std::move(chunk));
   }
 

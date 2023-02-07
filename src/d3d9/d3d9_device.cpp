@@ -5090,6 +5090,7 @@ namespace dxvk {
 
 
   void D3D9DeviceEx::EmitCsChunk(DxvkCsChunkRef&& chunk) {
+    chunk->finalize();
     m_csSeqNum = m_csThread.dispatchChunk(std::move(chunk));
   }
 

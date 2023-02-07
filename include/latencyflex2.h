@@ -54,6 +54,7 @@ typedef struct lfx2Dx12SubmitAux {
 #endif
 
 typedef uint64_t lfx2Timestamp;
+typedef uint64_t lfx2Interval;
 
 typedef uint32_t lfx2SectionId;
 
@@ -113,6 +114,16 @@ void lfx2MarkSection(struct lfx2Frame *frame,
                      lfx2SectionId section_id,
                      enum lfx2MarkType mark_type,
                      lfx2Timestamp timestamp);
+
+LFX2_API
+void lfx2FrameOverrideQueuingDelay(struct lfx2Frame *frame,
+                                   lfx2SectionId section_id,
+                                   lfx2Interval queueing_delay);
+
+LFX2_API
+void lfx2FrameOverrideInverseThroughput(struct lfx2Frame *frame,
+                                        lfx2SectionId section_id,
+                                        lfx2Interval inverse_throughput);
 
 LFX2_API struct lfx2ImplicitContext *lfx2ImplicitContextCreate(void);
 

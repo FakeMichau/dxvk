@@ -55,8 +55,12 @@ namespace dxvk {
 
     m_commandOffset = 0;
   }
-  
-  
+
+  void DxvkCsChunk::finalize() {
+    m_queuedTimestamp = high_resolution_clock::now();
+  }
+
+
   DxvkCsChunkPool::DxvkCsChunkPool() {
     
   }
@@ -161,6 +165,8 @@ namespace dxvk {
     // them in order to potentially reduce lock contention.
     std::vector<DxvkCsChunkRef> chunks;
 
+    high_resolution_clock::time_point lastFinish;
+
     try {
       while (!m_stopped.load()) {
         { std::unique_lock<dxvk::mutex> lock(m_mutex);
@@ -175,8 +181,16 @@ namespace dxvk {
 
         for (auto& chunk : chunks) {
           m_context->addStatCtr(DxvkStatCounter::CsChunkCount, 1);
-          m_context->tryBeginLfx2Frame(false);
+          m_context->tryBeginLfx2FrameImplicit(false);
+          high_resolution_clock::time_point start = high_resolution_clock::now();
           chunk->executeAll(m_context.ptr());
+          high_resolution_clock::time_point end = high_resolution_clock::now();
+          m_context->recordChunkExecutionTiming(
+              std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count(),
+              std::max(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                  lastFinish - chunk->getQueuedTimestamp()).count(), 0LL)
+          );
+          lastFinish = end;
 
           // Use a separate mutex for the chunk counter, this
           // will only ever be contested if synchronization is
