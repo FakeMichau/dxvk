@@ -6476,7 +6476,8 @@ namespace dxvk {
   void DxvkContext::endLfx2Frame() {
     if (m_type != DxvkContextType::Primary)
       Logger::err("endLfx2Frame should only be called on immediate contexts");
-    flushCommandList();
+    auto status = new DxvkSubmitStatus;
+    flushCommandList(status);
     auto &cLfx2 = m_device->lfx2();
     cLfx2.VulkanContextEndFrame(m_device->getLfx2VkContext(), m_lfx2Frame);
     cLfx2.FrameOverrideInverseThroughput(m_lfx2Frame, 800, m_frameCsTime);

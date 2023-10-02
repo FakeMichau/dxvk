@@ -22,7 +22,7 @@ namespace dxvk {
     m_queues            (queues),
     m_submissionQueue   (this, queueCallback) {
 
-    m_lfx2Vk = m_lfx2.VulkanContextCreate(instance->vki()->getLoaderProc(), instance->handle(), m_adapter->handle(), m_vkd->device(), queues().graphics.queueIndex);
+    m_lfx2Vk = m_lfx2.VulkanContextCreate(instance->vki()->getLoaderProc(), instance->handle(), m_adapter->handle(), m_vkd->device(), queues.graphics.queueIndex);
   }
   
   
