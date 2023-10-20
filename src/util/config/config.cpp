@@ -417,6 +417,11 @@ namespace dxvk {
     { R"(\\RidersRepublic(_BE)?\.exe$)", {{
       { "dxgi.hideAmdGpu",                "True"   },
     }} },
+    /* HoloCure - Save the Fans!
+       Same as Cyberpunk 2077                     */
+    { R"(\\HoloCure\.exe$)", {{
+      { "dxgi.useMonitorFallback",          "True" },
+    }} },
 
     /**********************************************/
     /* D3D9 GAMES                                 */
@@ -845,6 +850,13 @@ namespace dxvk {
      * enabling ray tracing if it sees an AMD GPU. */
     { R"(\\RiftApart\.exe$)", {{
       { "dxgi.hideNvidiaGpu",               "False" },
+    }} },
+    /* CP2077 enumerates display outputs each frame.
+     * Avoid using QueryDisplayConfig to avoid
+     * performance degradation until the
+     * optimization of that function is in Proton. */
+    { R"(\\Cyberpunk2077\.exe$)", {{
+      { "dxgi.useMonitorFallback",          "True" },
     }} },
   }};
 
